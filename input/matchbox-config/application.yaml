@@ -1,0 +1,34 @@
+server:
+  servlet:
+    context-path: /matchbox
+hapi:
+  fhir:
+    supported_resource_types:
+      - ImplementationGuide
+      - OperationDefinition
+      - Questionnaire
+      - QuestionnaireResponse
+      - StructureDefinition
+      - StructureMap
+      - ConceptMap
+    server_address: http://localhost:8080/matchbox/fhir
+    implementationguides:
+      fhir_r4_core:
+        name: hl7.fhir.r4.core
+        version: 4.0.1
+      fhir_terminology:
+        name: hl7.terminology
+        version: 5.4.0
+      fhir_extensions:
+        name: hl7.fhir.uv.extensions.r4
+        version: 1.0.0
+      cda:
+        name: hl7.cda.uv.core
+        version: 2.0.0-sd
+    staticLocation: file:/apps/
+matchbox:
+  fhir:
+    context:
+      fhirVersion: 4.0.1
+      txServer: http://tx.fhir.org
+      onlyOneEngine: true

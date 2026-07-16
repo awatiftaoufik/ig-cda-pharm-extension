@@ -1,0 +1,27 @@
+id: ans.fhir.fr.test-2-to-1
+canonical: https://nriss.github.io/test-2-to-1-object
+name: Test2to1
+title: "Test FML : fusion de deux objets CDA en une seule ressource FHIR"
+description: "IG de test illustrant comment une StructureMap FHIR (FML) peut fusionner deux objets CDA distincts décrivant le même établissement en une seule ressource Organization FHIR."
+publisher:
+  name: Agence du Numérique en Santé (ANS) - 2-10 Rue d'Oradour-sur-Glane, 75015 Paris
+  url: https://esante.gouv.fr
+status: draft
+version: 0.1.0
+fhirVersion: 4.0.1
+copyrightYear: 2026+
+releaseLabel: ci-build
+jurisdiction: urn:iso:std:iso:3166#FR "France (la)"
+
+dependencies:
+  hl7.cda.uv.core: 2.0.0-sd
+
+parameters:
+  shownav: 'true'
+  path-binary: input/attachments
+  path-resource:
+    - input/fml
+  path-expansion-params: '../../expansion-params.json'
+  show-inherited-invariants: false
+
+

@@ -1,0 +1,109 @@
+# Tests de transformation CDA → FHIR avec Matchbox
+# Basé sur https://github.com/nriss/test-2-to-1-object
+#
+# Prérequis : Matchbox v3 (test.ahdis.ch/matchboxv3) ou local matchboxv3
+# Usage     : VS Code REST Client ou IntelliJ HTTP Client
+
+@host = http://localhost:8080/matchbox/fhir
+#@host = https://test.ahdis.ch/matchboxv3/fhir
+
+
+###############################################################
+### ÉTAPE 0 — Charger les StructureMaps FML dans Matchbox  ###
+###############################################################
+
+### 0-A. POST CDA2FHIR-Organization-Merge.fml
+# StructureMap de fusion inconditionnelle : 2 branches CDA → 1 Organization
+POST {{host}}/StructureMap HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: text/fhir-mapping
+
+< ./input/fml/CDA2FHIR-Organization-Merge.fml
+
+
+### 0-B. POST CDA2FHIR-Organization-MergeConditional.fml
+# StructureMap de fusion conditionnelle : même identifiant → 1 org, sinon → 2 orgs (Bundle)
+POST {{host}}/StructureMap HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: text/fhir-mapping
+
+< ./input/fml/CDA2FHIR-Organization-MergeConditional.fml
+
+
+###############################################################
+### ÉTAPE 1 — Validation des documents CDA               ###
+###############################################################
+
+### 1-A. Valider ExempleCDA-EtablissementDouble.xml (même établissement dans custodian + author)
+POST {{host}}/StructureDefinition/$validate HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementDouble.xml
+
+
+### 1-B. Valider ExempleCDA-EtablissementsDistincts.xml (deux établissements différents)
+POST {{host}}/StructureDefinition/$validate HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementsDistincts.xml
+
+
+###############################################################
+### ÉTAPE 2 — Transformation : fusion inconditionnelle     ###
+### StructureMap : CDA2FHIR-Organization-Merge             ###
+### Résultat attendu : 1 Organization (toujours)           ###
+###############################################################
+
+### 2-A. CAS A : même établissement → Organization fusionnée
+# Attendu : 1 Organization avec identifiant 75ABC001, nom + téléphone + adresse
+POST {{host}}/StructureMap/$transform?source=https://nriss.github.io/test-2-to-1-object/StructureMap/CDA2FHIR-Organization-Merge HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementDouble.xml
+
+
+### 2-B. CAS B : établissements distincts → Organization du custodian uniquement (pas de fusion)
+# Attendu : 1 Organization avec identifiant 75ABC001 (custodian), sans télécom (auteur ignoré)
+POST {{host}}/StructureMap/$transform?source=https://nriss.github.io/test-2-to-1-object/StructureMap/CDA2FHIR-Organization-Merge HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementsDistincts.xml
+
+
+###############################################################
+### ÉTAPE 3 — Transformation : fusion conditionnelle       ###
+### StructureMap : CDA2FHIR-Organization-MergeConditional  ###
+### Résultat attendu : Bundle avec 1 ou 2 Organizations    ###
+###############################################################
+
+### 3-A. CAS A : même établissement → Bundle avec 1 Organization fusionnée
+# Attendu : Bundle collection, 1 entry, Organization avec 75ABC001, nom + télécom + adresse
+POST {{host}}/StructureMap/$transform?source=https://nriss.github.io/test-2-to-1-object/StructureMap/CDA2FHIR-Organization-MergeConditional HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementDouble.xml
+
+
+### 3-B. CAS B : établissements distincts → Bundle avec 2 Organizations séparées
+# Attendu : Bundle collection, 2 entries
+#   - Organization 1 : 75ABC001 (Hôpital Central Paris) avec adresse
+#   - Organization 2 : 75DEF002 (Clinique du Sud) avec téléphone
+POST {{host}}/StructureMap/$transform?source=https://nriss.github.io/test-2-to-1-object/StructureMap/CDA2FHIR-Organization-MergeConditional HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
+Content-Type: application/fhir+xml;fhirVersion=4.0
+
+< ./input/attachments/ExempleCDA-EtablissementsDistincts.xml
+
+
+###############################################################
+### OPTIONNEL — Lister les StructureMaps chargées          ###
+###############################################################
+
+### Lister toutes les StructureMaps disponibles dans Matchbox
+GET {{host}}/StructureMap?_count=20 HTTP/1.1
+Accept: application/fhir+json;fhirVersion=4.0
