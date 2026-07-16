@@ -25,3 +25,15 @@ parameters:
   show-inherited-invariants: false
 
 
+
+
+
+
+pages:
+  index.md:
+    title: Accueil
+  
+
+menu:
+  Accueil: index.html
+ 
