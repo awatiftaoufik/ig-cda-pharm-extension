@@ -23,3 +23,6 @@ La FHIR Mapping Language (FML) permet de définir un groupe recevant **plusieurs
 - **[Approche FML](mapping-approach.html)** : explication de la technique de fusion
 - **StructureMap** : [`CDA2FHIR-Organization-Merge`](StructureMap-CDA2FHIR-Organization-Merge.html)
 - **Exemple CDA** : [`ExempleCDA-EtablissementDouble.xml`](Binary-ExempleCDA-EtablissementDouble.html)
+
+
+test
